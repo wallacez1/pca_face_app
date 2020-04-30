@@ -87,11 +87,17 @@ module.exports.createParticipant = (event, context, callback) => {
       ConditionExpression: 'attribute_not_exists(id)',
     })
     .promise()
-    .then((res) => {
-      
-      callback(null, response(201, participant));
+    .then(() => {
+      callback(null, response(201,participant));
     })
-    .catch((err) => response(null, response(err.statusCode, err)));
+    .catch((err) => {
+      if (err.statusCode === 400) {
+        callback(null, response(400, 'Usuário ja cadastrado na sala'))
+      } else {
+        response(null, response(err.statusCode, err))
+      }
+
+    });
 };
 // Get all rooms
 module.exports.getAllparticipant = (event, context, callback) => {
