@@ -1,0 +1,109 @@
+service: sls
+
+custom:
+  settings:
+    ROOM_TABLE: room
+    USER_TABLE: user
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: sa-east-1
+  environment: ${self:custom.settings}
+  iamRoleStatements:
+   - Effect: "Allow"
+     Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Scan
+        - dynamodb:Query
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+     Resource:
+      - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.ROOM_TABLE}"
+      - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.USER_TABLE}"
+
+functions:
+  createRoom:
+    handler: handler.createRoom
+    events:
+    - http:
+        path: /room
+        method: post
+  getAllRooms:
+    handler: handler.getAllRooms
+    events:
+    - http:
+        path: /rooms
+        method: get
+  getRoom:
+    handler: handler.getRoom
+    events:
+    - http:
+        path: /room/{roomId}
+        method: get
+  getUserRooms:
+    handler: handler.userRooms
+    events:
+    - http:
+        path: /room/user/{roomId}
+        method: get
+  updateRoom:
+    handler: handler.updateRoom
+    events:
+    - http:
+        path: /room/{roomId}
+        method: put
+  deleteRoom:
+    handler: handler.deleteRoom
+    events:
+    - http:
+        path: /room/{roomId}
+        method: delete
+  createUser:
+    handler: handler.createUser
+    events:
+    - http:
+        path: /user
+        method: post
+  getAllUsers:
+    handler: handler.getAllUsers
+    events:
+    - http:
+        path: /user
+        method: get
+  
+
+resources:
+  Resources:
+    RoomTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "roomId"
+          AttributeType: "S"
+        - AttributeName: "userId"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "roomId"
+          KeyType: "HASH"
+        - AttributeName: "userId"
+          KeyType: "RANGE"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.ROOM_TABLE}
+    UserTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "email"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "email"
+          KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.USER_TABLE}
