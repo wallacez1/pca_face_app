@@ -83,10 +83,12 @@ module.exports.createParticipant = (event, context, callback) => {
   return db
     .put({
       TableName: participantTable,
-      Item: participant
+      Item: participant,
+      ConditionExpression: 'attribute_not_exists(id)',
     })
     .promise()
-    .then(() => {
+    .then((res) => {
+      
       callback(null, response(201, participant));
     })
     .catch((err) => response(null, response(err.statusCode, err)));
@@ -117,8 +119,6 @@ module.exports.getParticipantByRoom = (event, context, callback) => {
     },
     TableName: participantTable
   };
-
-  console.log(params)
 
   return db
     .query(params)
