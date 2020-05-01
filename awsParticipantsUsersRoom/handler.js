@@ -2,6 +2,12 @@ const AWS = require('aws-sdk');
 const db = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10' });
 const uuid = require('uuid/v4');
 
+AWS.config.update({
+  accessKeyId: 'AKIAJF3AVDSRWIVQFQ2A',
+  secretAccessKey: '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',
+  region: 'sa-east-1'
+});
+
 const participantTable = process.env.PARTICIPANT_TABLE
 
 // Create a response
@@ -19,6 +25,7 @@ function sortByDate(a, b) {
 
 module.exports.createParticipant = (event, context, callback) => {
   const reqBody = JSON.parse(event.body);
+  let userPictureKey = uuid()
 
   if (
     !reqBody.id ||
@@ -41,20 +48,19 @@ module.exports.createParticipant = (event, context, callback) => {
     return callback(
       null,
       response(400, {
-        error: 'Participante deve ter id da Sala '
+        error: 'Participante deve ter id da sala '
       })
     );
   }
 
   if (
-    !reqBody.url ||
-    reqBody.url.trim() === ''
+    !reqBody.userPicture
 
   ) {
     return callback(
       null,
       response(400, {
-        error: 'Participante deve ter url'
+        error: 'Participante deve ter foto'
       })
     );
   }
@@ -71,33 +77,62 @@ module.exports.createParticipant = (event, context, callback) => {
     );
   }
 
-  const participant = {
-    id: reqBody.id,
-    createdAt: new Date().toISOString(),
-    roomId: reqBody.roomId,
-    name: reqBody.name,
-    url: reqBody.url,
+  let decodedImage = Buffer.from(reqBody.userPicture.replace(/^data:image\/\w+;base64,/, ""), 'base64')
 
+  const type = reqBody.userPicture.split(';')[0].split('/')[1]
+
+  let s3bucket = new AWS.S3({
+    Bucket: 'pca-knowns-users',
+  });
+
+  var params = {
+    Bucket: 'pca-knowns-users',
+    Key: `${userPictureKey}.${type}`,
+    ACL: 'public-read',
+    Body: decodedImage,
+    ContentEncoding: 'base64', 
+    ContentType: `image/${type}`
   };
+  s3bucket.putObject(params, function (err, data) {
+    if (err) {
+      console.log('error in callback');
+      console.log(err);
+    } else if (data) {
 
-  return db
-    .put({
-      TableName: participantTable,
-      Item: participant,
-      ConditionExpression: 'attribute_not_exists(id)',
-    })
-    .promise()
-    .then(() => {
-      callback(null, response(201,participant));
-    })
-    .catch((err) => {
-      if (err.statusCode === 400) {
-        callback(null, response(400, 'Usuário ja cadastrado na sala'))
-      } else {
-        response(null, response(err.statusCode, err))
-      }
+      let userPicture = 'https://pca-knowns-users.s3.amazonaws.com/' + userPictureKey + '.jpeg'
 
-    });
+      const participant = {
+        id: reqBody.id,
+        createdAt: new Date().toISOString(),
+        roomId: reqBody.roomId,
+        name: reqBody.name,
+        userPicture: userPicture,
+
+      };
+
+      return db
+        .put({
+          TableName: participantTable,
+          Item: participant,
+          ConditionExpression: 'attribute_not_exists(id)',
+        })
+        .promise()
+        .then(() => {
+          callback(null, response(201, participant));
+        })
+        .catch((err) => {
+          if (err.statusCode === 400) {
+            callback(null, response(400, 'Usuário ja cadastrado na sala'))
+          } else {
+            response(null, response(err.statusCode, err))
+          }
+
+        })
+
+    }
+  })
+
+    ;
 };
 // Get all rooms
 module.exports.getAllparticipant = (event, context, callback) => {
@@ -113,8 +148,35 @@ module.exports.getAllparticipant = (event, context, callback) => {
 };
 // Update a room
 module.exports.getParticipantByRoom = (event, context, callback) => {
-  const id = event.pathParameters.id;
-  const roomId = event.pathParameters.roomId;
+  const reqBody = JSON.parse(event.body)
+  const id = reqBody.id;
+  const roomId = reqBody.roomId;
+
+  if (
+    !reqBody.id ||
+    reqBody.id.trim() === ''
+
+  ) {
+    return callback(
+      null,
+      response(400, {
+        error: 'Participante deve ter id '
+      })
+    );
+  }
+
+  if (
+    !reqBody.roomId ||
+    reqBody.roomId.trim() === ''
+
+  ) {
+    return callback(
+      null,
+      response(400, {
+        error: 'Participante deve ter id da sala '
+      })
+    );
+  }
 
   const params = {
 

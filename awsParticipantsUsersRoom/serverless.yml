@@ -40,8 +40,8 @@ functions:
     handler: handler.getParticipantByRoom
     events:
     - http:
-        path: /room/{roomId}/participants/{id}
-        method: get
+        path: /room/participant
+        method: post
   
 
 resources:
