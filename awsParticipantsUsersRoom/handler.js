@@ -1,12 +1,9 @@
 const AWS = require('aws-sdk');
 const db = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10' });
 const uuid = require('uuid/v4');
+const dotenv = require('dotenv');
+dotenv.config()
 
-AWS.config.update({
-  accessKeyId: 'AKIAJF3AVDSRWIVQFQ2A',
-  secretAccessKey: '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',
-  region: 'sa-east-1'
-});
 
 const participantTable = process.env.PARTICIPANT_TABLE
 
