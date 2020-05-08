@@ -1,9 +1,13 @@
 const AWS = require('aws-sdk');
 const db = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10' });
 const uuid = require('uuid/v4');
-const dotenv = require('dotenv');
-dotenv.config()
 
+
+AWS.config.update({
+  accessKeyId: process.env.accessKeyId,
+  secretAccessKey: process.env.secretAccessKey,
+  region:  process.env.region
+});
 
 const participantTable = process.env.PARTICIPANT_TABLE
 
@@ -45,7 +49,7 @@ module.exports.createParticipant = (event, context, callback) => {
     return callback(
       null,
       response(400, {
-        error: 'Participante deve ter id da sala '
+        error: 'Participante deve ter id da Sala '
       })
     );
   }
@@ -85,7 +89,6 @@ module.exports.createParticipant = (event, context, callback) => {
   var params = {
     Bucket: 'pca-knowns-users',
     Key: `${userPictureKey}.${type}`,
-    ACL: 'public-read',
     Body: decodedImage,
     ContentEncoding: 'base64', 
     ContentType: `image/${type}`
@@ -103,7 +106,7 @@ module.exports.createParticipant = (event, context, callback) => {
         createdAt: new Date().toISOString(),
         roomId: reqBody.roomId,
         name: reqBody.name,
-        userPicture: userPicture,
+        userPicture: `${userPictureKey}.${type}`,
 
       };
 

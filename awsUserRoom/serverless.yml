@@ -23,7 +23,12 @@ provider:
      Resource:
       - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.ROOM_TABLE}"
       - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.USER_TABLE}"
-
+   - Effect: "Allow"
+     Action:
+        - "s3:ListBucket"
+        - "s3:GetObject"
+        - "s3:PutObject"
+     Resource: "arn:aws:s3:::pca-knowns-users/*"
 functions:
   createRoom:
     handler: handler.createRoom
