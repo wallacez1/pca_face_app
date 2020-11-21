@@ -64,7 +64,11 @@ module.exports.createRoom = (event, context, callback) => {
     userId: reqBody.userId,
     title: reqBody.title,
     descripton: reqBody.descripton,
-    body: reqBody.body
+    body: reqBody.body,
+    eventcategory: reqBody.eventcategory,
+    eventPrice: reqBody.eventPrice,
+    eventType: reqBody.eventType,
+    freeEvent: reqBody.freeEvent,
   };
 
   return db
@@ -196,7 +200,7 @@ module.exports.userRooms = (event, context, callback) => {
     .catch((err) => callback(null, response(err.statusCode, err)));
 };
 // Delete a post
-module.exports.deleteRoom = (event, context, callback) => {
+module.exports.removeRoom = (event, context, callback) => {
   const id = event.pathParameters.id;
   const params = {
     Key: {
